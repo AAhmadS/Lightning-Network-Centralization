@@ -113,12 +113,9 @@ class simulator():
       trg_src = self.network_dictionary[(trg,src)]
       trg_src_balance = trg_src[0] + transaction_amount
       self.network_dictionary[(trg,src)][0] = trg_src_balance
-      print(self.network_dictionary[(trg,src)])
-      
-      self.current_graph[src,trg]['balance'] = src_trg_balance
-      self.current_graph[trg,src]['balance'] = trg_src_balance
-      exit()
-
+      if src != self.src and trg != self.src:
+        self.current_graph[src][trg]['balance'] = src_trg_balance
+        self.current_graph[trg][src]['balance'] = trg_src_balance
       
       for (count,amount,epsilon) in self.transaction_types:
           graph = self.graphs_dict[amount]  

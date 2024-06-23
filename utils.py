@@ -3,7 +3,6 @@ import os
 
 project_root = os.path.dirname(os.path.realpath(__file__))
 stable_path = os.path.join(project_root, "stable-baselines3")
-
 sys.path.append(stable_path)
 
 import numpy as np
@@ -35,7 +34,7 @@ def make_agent(env, algo, device, tb_log_dir):
             features_extractor_kwargs=dict(features_dim=64),
         )
         # Instantiate the PPO agent with the custom policy
-        model = PPO(policy, env, rollout_buffer_class = MyCustomDictRolloutBuffer, policy_kwargs=policy_kwargs, verbose=1)
+        model = PPO(policy, env, device=device, tensorboard_log=tb_log_dir,rollout_buffer_class = MyCustomDictRolloutBuffer, policy_kwargs=policy_kwargs, verbose=1)
         # model = PPO(policy, env, verbose=1, device=device, tensorboard_log=tb_log_dir)
     elif algo == "TRPO":
         from sb3_contrib import TRPO

@@ -131,8 +131,8 @@ def get_fire_forest_sample(G, reverse_mapping, sample_size, burning_prob=0.7):
     
     # Step 2: Apply the ForestFireSampler to the undirected graph
     forestFireSampler = ForestFireSampler(number_of_nodes=sample_size, p=burning_prob,
-                                          seed=42, max_visited_nodes_backlog=100, restart_hop_size=10)
-    
+                                           max_visited_nodes_backlog=100, restart_hop_size=10)
+    random.seed()
     # Wrapper around the sample method
     def wrapped_sample(graph):
         def modified_start_a_fire(graph):
@@ -172,15 +172,19 @@ def get_fire_forest_sample(G, reverse_mapping, sample_size, burning_prob=0.7):
         
         # Override the _start_a_fire method
         forestFireSampler._start_a_fire = modified_start_a_fire
-        return forestFireSampler.sample(graph)
+        while True:
+            sampled_nodes = forestFireSampler.sample(graph)
+            if len(sampled_nodes) >= sample_size:
+                return sampled_nodes
+            else:
+                print("Resampling due to insufficient sample size.")
+                random.seed()
     
     sampled_numeric_undirected_G = wrapped_sample(G)
     # Map back to original node labels
     
     sampled_undirected_G = nx.relabel_nodes(sampled_numeric_undirected_G, reverse_mapping)
     sub_nodes = list(sampled_undirected_G.nodes())
-
-    
     return sub_nodes
     
 
@@ -268,8 +272,23 @@ def make_LN_graph(directed_edges, providers, manual_balance, src, trgs, channel_
 
 def get_nodes_centralities(G):
     degrees = nx.degree_centrality(G)
-    eigenvectors = nx.eigenvector_centrality(G)
+    eigenvectors = get_eigenvector_centrality(G, degrees)
     return degrees, eigenvectors
+
+def get_eigenvector_centrality(G, degree_centrality):
+    try:
+        # Try calculating eigenvector centrality with default parameters
+        eigenvectors = nx.eigenvector_centrality(G)
+        return eigenvectors
+    except nx.PowerIterationFailedConvergence as e:
+        print(f"Eigenvector centrality failed to converge: {e}. Trying with increased iterations and adjusted tolerance.")
+        try:
+            # Try calculating eigenvector centrality with increased iterations and adjusted tolerance
+            eigenvectors = nx.eigenvector_centrality(G, max_iter=1000, tol=1e-06)
+            return eigenvectors
+        except nx.PowerIterationFailedConvergence as e:
+            print(f"Eigenvector centrality still failed to converge: {e}. Using degree centrality as a fallback.")
+            return degree_centrality
     
 
 def create_sub_network(directed_edges, providers, src, trgs, channel_ids, local_size, local_heads_number, manual_balance=False, initial_balances = [], capacities=[]):

@@ -68,7 +68,7 @@ class FeeEnv(gym.Env):
                   number_of_transaction_types, counts, amounts, epsilons, capacity_upper_scale_bound,
                     seed, LN_graph):
         # Source node\
-        
+        self.total_time_step = 0
         self.data = data
         self.src = self.data['src']
         self.LN_graph = LN_graph
@@ -226,7 +226,7 @@ class FeeEnv(gym.Env):
         
         action = self.aggregate_and_standardize_action(action)
         
-        if self.time_step%100==0:
+        if self.total_time_step % 500==0:
             print("action: ",action,"time step: ",self.time_step)
   
     
@@ -264,7 +264,7 @@ class FeeEnv(gym.Env):
                     np.multiply(fees_to_use_for_reward[self.n_channel:], transaction_numbers)))
 
         self.time_step += 1
-        
+        self.total_time_step+=1
         info = {'TimeLimit.truncated': True if self.time_step >= self.max_episode_length else False}
         done = self.time_step >= self.max_episode_length
 
@@ -321,7 +321,7 @@ class FeeEnv(gym.Env):
     
 
     def reset(self):
-        print('episode ended!')
+        # print('episode ended!')
         self.time_step = 0
         if self.mode == 'fee_setting':
             self.state = np.append(self.initial_balances, np.zeros(shape=(self.n_channel,)))
@@ -380,9 +380,9 @@ class FeeEnv(gym.Env):
         fixed_trgs = [self.graph_nodes[i] for i in action[:midpoint]]
         
         if len(action) != 0:
-            fixed_action = softmax(np.array(action[midpoint:])) * self.maximum_capacity      
+            fixed_action = list(softmax(np.array(action[midpoint:])) * self.maximum_capacity)    
       
-        return fixed_trgs+fixed_action.tolist()
+        return fixed_trgs+fixed_action
     
     def aggregate_and_standardize_action(self,action):
         """
@@ -504,7 +504,6 @@ class FeeEnv(gym.Env):
 
         return list_of_pairs
 
-    
     def add_edges(self, G, k): 
 
         list_of_pairs = self.fetch_new_pairs_for_create_new_channels(G, k)
@@ -529,7 +528,6 @@ class FeeEnv(gym.Env):
 
         return G
     
-        
     def set_new_graph_environment(self):
 
         sub_nodes = self.sample_graph_environment()
@@ -553,7 +551,10 @@ class FeeEnv(gym.Env):
         self.data['network_dictionary'] = network_dictionary
         self.data['node_variables'] = node_variables
         self.data['active_providers'] = active_providers
-        self.data['nodes'] = sub_nodes
+        self.data['nodes'] = sub_graph.nodes()
+        
+
+        
 
         self.graph_nodes = list(self.data['nodes'])
         if self.src in self.graph_nodes:
@@ -590,7 +591,6 @@ class FeeEnv(gym.Env):
                 - edge_index (numpy.ndarray): A 2D array of edge indices.
                 - edge_attr (numpy.ndarray): A 2D array of edge attributes.
         """
-
         node_features = np.array([G.nodes[n]['feature'] for n in G.nodes]).astype(np.float32)
         degrees, eigenvectors = preprocessing.get_nodes_centralities(self.simulator.current_graph)
         if np.max(self.simulator.transaction_amounts) == 0:
@@ -622,10 +622,11 @@ class FeeEnv(gym.Env):
             edge_attr_list.append([filtered_attrs[i]/max_list[i] for i in range(len(max_list))])
         edge_attr = np.array(edge_attr_list)
 
+        # self.compare_and_update(edge_attr)
+
         return node_features, edge_index, edge_attr
 
-
-
-    def get_normalizer_configs(self,):
+    def get_normalizer_configs(self):
         #return cap_max, base_max, rate_max
         return self.data["fee_base_max"], self.data["fee_rate_max"], self.data["capacity_max"]
+    
