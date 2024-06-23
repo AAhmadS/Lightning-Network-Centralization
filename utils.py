@@ -2,7 +2,7 @@ import sys
 import os
 
 project_root = os.path.dirname(os.path.realpath(__file__))
-stable_path = os.path.join(project_root, "stable_baselines3")
+stable_path = os.path.join(project_root, "stable-baselines3")
 
 sys.path.append(stable_path)
 
