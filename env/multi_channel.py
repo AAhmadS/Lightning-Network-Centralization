@@ -364,8 +364,10 @@ class FeeEnv(gym.Env):
                 connected_node_ids.append(i)
                 connected_node_capacities.append(val)
         return connected_node_ids + connected_node_capacities
+            
 
-    def get_local_graph(self, scale):
+
+    def get_local_graph(self,scale):
         return self.simulator.get_local_graph(scale)
         # return self.simulator.current_graph
     
