@@ -255,15 +255,15 @@ class simulator():
 
   def get_local_graph(self, scale):
     # self.sync_network_dictionary()
-    # graph = nx.DiGraph()
+    graph = nx.DiGraph()
 
-  #   for key in self.network_dictionary :
-  #     val = self.network_dictionary[key]
-  #     # val[0] represents balance key[0] src and key[1] target, val[1] is fee_rate and val[2] is fee_base
-  #     graph.add_edge(key[0],key[1],weight = val[1]*scale + val[2])
+    for key in self.network_dictionary :
+      val = self.network_dictionary[key]
+      # val[0] represents balance key[0] src and key[1] target, val[1] is fee_rate and val[2] is fee_base
+      graph.add_edge(key[0],key[1],weight = val[1]*scale + val[2])
     
-  #   # assert self.src in self.network_dictionary
-  #   return graph
+    # assert self.src in self.network_dictionary
+    return graph
     
 
   def update_network_data(self, path, transaction_amount):
