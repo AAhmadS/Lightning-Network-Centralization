@@ -1,3 +1,11 @@
+import os
+import sys
+
+current_file_directory = os.path.dirname(os.path.realpath(__file__))
+project_root = os.path.abspath(os.path.join(current_file_directory, '..'))
+sys.path.append(project_root)
+
+
 from utils import load_data, make_agent, make_env, load_model
 from stable_baselines3 import SAC, TD3, PPO
 from numpy import load

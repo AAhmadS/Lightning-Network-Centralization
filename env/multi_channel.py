@@ -3,7 +3,7 @@ from gym import spaces
 from gym.spaces import *
 from gym.utils import seeding
 import numpy as np
-import graph_embedding_processing
+# import graph_embedding_processing
 from simulator import preprocessing
 from simulator.simulator import simulator
 from simulator.preprocessing import generate_transaction_types
@@ -68,6 +68,7 @@ class FeeEnv(gym.Env):
                   amounts, epsilons, capacity_upper_scale_bound, LN_graph, seed):
         
         self.max_capacity = max_capacity
+        self.remaining_capacity = max_capacity
         self.capacity_upper_scale_bound = capacity_upper_scale_bound
         self.data = data
         self.LN_graph = LN_graph
@@ -150,10 +151,12 @@ class FeeEnv(gym.Env):
         if new_trg not in self.simulator.trgs:
             self.simulator.trgs.append(new_trg)
             # self.simulator.shares.append(action[1])
-            self.simulator.shares[new_trg] = action[1] + 1
+            self.simulator.shares[new_trg] = (action[1] + 1)/self.capacity_upper_scale_bound * self.remaining_capacity
         else:
             budget_so_far = self.simulator.shares[new_trg]
-            self.simulator.shares[new_trg] = budget_so_far + action[1] + 1
+            self.simulator.shares[new_trg] = budget_so_far + (action[1] + 1)/self.capacity_upper_scale_bound * self.remaining_capacity
+        
+        self.remaining_capacity -= (action[1] + 1)/self.capacity_upper_scale_bound * self.remaining_capacity
 
 
 
@@ -246,7 +249,7 @@ class FeeEnv(gym.Env):
         self.prev_reward = 0
         self.set_new_graph_environment()
 
-        # self.remaining_capacity = self.max_capacity
+        self.remaining_capacity = self.max_capacity
 
         # node_features, edge_index, edge_attr = self.extract_graph_attributes(self.simulator.current_graph, exclude_attributes=['capacity', 'channel_id'])
         # self.state = {
@@ -305,9 +308,9 @@ class FeeEnv(gym.Env):
         # fixed_action = list((np.array(self.simulator.shares)/self.max_episode_length) * self.max_capacity)
         shares_list = list(self.simulator.shares.values())
         trgs_list = list(self.simulator.shares.keys())
-        shares_sum = sum(shares_list) 
-        caps = [item / shares_sum * self.max_capacity for item in shares_list]
-        trgs_and_caps = trgs_list + caps
+        # shares_sum = sum(shares_list) 
+        # caps = [item / shares_sum * self.max_capacity for item in shares_list]
+        trgs_and_caps = trgs_list + shares_list
         
 
         # if len(action) != 0:
@@ -367,11 +370,7 @@ class FeeEnv(gym.Env):
             
 
 
-<<<<<<< HEAD
     def get_local_graph(self,scale):
-=======
-    def get_local_graph(self,scale):
->>>>>>> e55c3bd3ec582db156c6cc49dffa4ec54f2acc37
         return self.simulator.get_local_graph(scale)
         # return self.simulator.current_graph
     

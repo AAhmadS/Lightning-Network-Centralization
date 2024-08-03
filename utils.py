@@ -1,11 +1,9 @@
 import sys
 import os
 
-
-project_root = os.path.dirname(os.path.realpath(__file__))
-stable_path = os.path.join(project_root, "stable-baselines3")
-
-sys.path.append(stable_path)
+# project_root = os.path.dirname(os.path.realpath(__file__))
+# # stable_path = os.path.join(project_root, "stable-baselines3")
+# sys.path.append(project_root)
 
 import numpy as np
 import stable_baselines3
@@ -16,7 +14,7 @@ from env.multi_channel import FeeEnv
 import networkx as nx
 import os
 import pickle
-import graph_embedding_processing
+# import graph_embedding_processing
 from sklearn.model_selection import train_test_split
 from model.GATv2_feature_extractor import CustomGATv2Extractor
 from model.custom_buffer import MyCustomDictRolloutBuffer
