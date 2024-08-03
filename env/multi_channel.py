@@ -367,7 +367,11 @@ class FeeEnv(gym.Env):
             
 
 
+<<<<<<< HEAD
     def get_local_graph(self,scale):
+=======
+    def get_local_graph(self,scale):
+>>>>>>> e55c3bd3ec582db156c6cc49dffa4ec54f2acc37
         return self.simulator.get_local_graph(scale)
         # return self.simulator.current_graph
     
