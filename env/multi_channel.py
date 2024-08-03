@@ -437,7 +437,8 @@ class FeeEnv(gym.Env):
 
 
     def get_local_graph(self,scale):
-        return self.simulator.current_graph
+        return self.simulator.get_local_graph(scale)
+        # return self.simulator.current_graph
     
     def set_undirected_attributed_LN_graph(self):
         undirected_G = nx.Graph(self.LN_graph)
