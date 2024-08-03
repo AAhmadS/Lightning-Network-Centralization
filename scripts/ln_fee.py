@@ -33,8 +33,9 @@ class EarlyStoppingCallback(BaseCallback):
 def train(env_params, train_params, tb_log_dir, tb_name, log_dir, seed):
 
     data = load_data(env_params['mode'],env_params['node_index'], env_params['data_path'], env_params['merchants_path'], env_params['local_size'],
-                     env_params['manual_balance'], env_params['initial_balances'], env_params['capacities'],env_params['n_channels'],env_params['local_heads_number'], env_params["max_capacity"])
-    env = make_env(data, env_params, seed,eval_mode = False)
+                     env_params['manual_balance'], env_params['initial_balances'], env_params['capacities']
+                     ,env_params['n_channels'],env_params['local_heads_number'], env_params["max_capacity"])
+    env = make_env(data, env_params, seed)
     model = make_agent(env, train_params['algo'], train_params['device'], tb_log_dir)
     # model = load_model("PPO", env_params,"plotting/tb_results/trained_model/PPO_tensorboard")
     # model.set_env(env)

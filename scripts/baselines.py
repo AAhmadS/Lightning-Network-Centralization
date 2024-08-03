@@ -19,7 +19,7 @@ def evaluate(mode,strategy, env, env_params, gamma):
         else:
             #NOTE: Add env_params["scale"], apply to amounts when generating amount graphs
             if strategy == "top_k_betweenness":
-                graph = env.get_local_graph(scale=230000/(10000/env_params["amounts"][0]))
+                graph = env.get_local_graph(scale = 230000/(10000/env_params["amounts"][0]))
             else: graph = None
             #NOTE: should define a evaluation functions here to use as balinese evaluation for channel selection fee.
             action = get_channels_and_capacities_based_on_strategy(strategy,env_params['capacity_upper_scale_bound']
@@ -27,7 +27,9 @@ def evaluate(mode,strategy, env, env_params, gamma):
             print("ACTION",action)
             state, reward, done, info = env.step(action)
         rewards.append(reward)
-        print(reward)
+        if reward!=0:
+            print("REWARD",reward)
+        # print(reward)
 
     discounted_reward = get_discounted_reward(rewards, gamma)
     return discounted_reward
@@ -49,17 +51,17 @@ if __name__ == '__main__':
     parser.add_argument('--n_seed', type=int, default=1) # 5
     parser.add_argument('--fee_base_upper_bound', type=int, default=100)
     parser.add_argument('--total_timesteps', type=int, default=100000)
-    parser.add_argument('--max_episode_length', type=int, default=500)
+    parser.add_argument('--max_episode_length', type=int, default=10)
     parser.add_argument('--local_size', type=int, default=100)
     parser.add_argument('--counts', default=[10, 10, 10], type=lambda s: [int(item) for item in s.split(',')])
-    parser.add_argument('--amounts', default=[100, 500, 1000], type=lambda s: [int(item) for item in s.split(',')])
+    parser.add_argument('--amounts', default=[10000, 50000, 100000], type=lambda s: [int(item) for item in s.split(',')])
     parser.add_argument('--epsilons', default=[.6, .6, .6], type=lambda s: [float(item) for item in s.split(',')])
     parser.add_argument('--manual_balance', default=False)
     parser.add_argument('--initial_balances', default=[], type=lambda s: [int(item) for item in s.split(',')])
     parser.add_argument('--capacities', default=[],type=lambda s: [int(item) for item in s.split(',')])
     parser.add_argument('--device', default='auto')
-    parser.add_argument('--max_capacity', type = int, default=10000) 
-    parser.add_argument('--n_channels', type=int, default=7)
+    parser.add_argument('--max_capacity', type = int, default=1e7) 
+    parser.add_argument('--n_channels', type=int, default=3)
     parser.add_argument('--mode', type=str, default='channel_openning')#TODO: add this arg to all scripts
     parser.add_argument('--capacity_upper_scale_bound', type=int, default=25)
     parser.add_argument('--local_heads_number', type=int, default=5)
@@ -98,8 +100,9 @@ if __name__ == '__main__':
         data = load_data(env_params['mode'],env_params['node_index'], env_params['data_path'], env_params['merchants_path'], env_params['local_size'],
                      env_params['manual_balance'], env_params['initial_balances'], env_params['capacities'],env_params['n_channels'],env_params['local_heads_number'],env_params["max_capacity"])
         env = make_env(data, env_params, seed)
-        discounted_reward = evaluate(env_params['mode'],strategy, env, env_params, gamma=0.99)
-        reward_list.append(discounted_reward)
+        for i in range(200):
+            discounted_reward = evaluate(env_params['mode'],strategy, env, env_params, gamma=1)
+            reward_list.append(discounted_reward)
 
 
     import statistics

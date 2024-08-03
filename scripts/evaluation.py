@@ -2,21 +2,34 @@ import numpy as np
 from env.multi_channel import FeeEnv
 from simulator import preprocessing
 from utils import load_data, make_env, get_fee_based_on_strategy, get_discounted_reward, load_model
+import random
 
 
 def evaluate(model, env, gamma):
     done = False
     state = env.reset()
     rewards = []
+    random.seed()
     while not done:
         action, _state = model.predict(state)
-        action = np.array(action)
+        action = np.array(action)[0]
+
+        # print("a1",action)
+
+
+        # action = np.random.randint(0,100,3).tolist() + np.random.randint(0,25,3).tolist()
+        # print("a2",action)
+
+
         print("ACTION:",action)
         state, reward, done, info = env.step(action)
         rewards.append(reward)
-        print(reward)
+        # print(reward)
 
     discounted_reward = get_discounted_reward(rewards, gamma)
+    # print("ACTION:",action)
+    if discounted_reward!=0:
+        print("DISCOUNTED REWARD:",discounted_reward)
     return discounted_reward
 
 
@@ -31,7 +44,7 @@ if __name__ == '__main__':
     parser.add_argument('--data_path', default='data/data.json')
     parser.add_argument('--merchants_path', default='data/merchants.json')
     parser.add_argument('--fee_base_upper_bound', type=int, default=100)
-    parser.add_argument('--max_episode_length', type=int, default=50)
+    parser.add_argument('--max_episode_length', type=int, default=10)
     parser.add_argument('--n_seed', type=int, default=1)  # 5
     parser.add_argument('--local_size', type=int, default=100)
     parser.add_argument('--node_index', type=int, default=97851)  # 97851
@@ -81,12 +94,13 @@ if __name__ == '__main__':
         data = load_data(env_params['mode'],env_params['node_index'], env_params['data_path'], env_params['merchants_path'], env_params['local_size'],
                      env_params['manual_balance'], env_params['initial_balances'], env_params['capacities'],env_params['n_channels'],env_params['local_heads_number'],env_params["max_capacity"])
         for algo in algos:
-            env = make_env(data, env_params, seed, eval_mode=True)
-            model = load_model(algo, env_params,"plotting/tb_results/trained_model/PPO_tensorboard_3channel_5000graphs_decaying_penalty_50length_episode_1mil_timestep")
+            env = make_env(data, env_params, seed)
+            model = load_model(algo, env_params,"plotting/tb_results/trained_model/PPO_tensorboard")
             model.set_env(env)
 
-            discounted_reward = evaluate(model, env, gamma=0.99)
-            algo_reward_dict[algo].append(discounted_reward)
+            for i in range(200):
+                discounted_reward = evaluate(model, env, gamma=1)
+                algo_reward_dict[algo].append(discounted_reward)
 
 
     import statistics

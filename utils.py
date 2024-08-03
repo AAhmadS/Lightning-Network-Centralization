@@ -63,7 +63,7 @@ def make_agent(env, algo, device, tb_log_dir):
     return model
 
 
-def make_env(data, env_params, seed, eval_mode):
+def make_env(data, env_params, seed):
 
     assert len(env_params['counts']) == len(env_params['amounts']) and len(env_params['counts']) == len(
         env_params['epsilons']), "number of transaction types missmatch"
@@ -74,15 +74,7 @@ def make_env(data, env_params, seed, eval_mode):
     G = preprocessing.make_LN_graph(directed_edges, providers, env_params['manual_balance'], data["src"]
     , data["trgs"], data["channel_ids"], env_params['capacities'], env_params['initial_balances'])
 
-    # if eval_mode==True:
-    #     test_filename='test_list_of_sub_nodes.pkl'
-    #     if os.path.exists(test_filename):
-    #         with open(test_filename, 'rb') as f:
-    #             list_of_sub_nodes = pickle.load(f)
-    # else:
-    #     list_of_sub_nodes = get_or_create_list_of_sub_nodes(G, data['src'], env_params['local_heads_number'],
-    #     data['providers'], env_params['local_size'], list_size = 5000,
-    #     train_filename='train_list_of_sub_nodes.pkl', test_filename='test_list_of_sub_nodes.pkl')
+   
 
     env = FeeEnv(env_params["mode"],data,env_params['max_capacity'], env_params['fee_base_upper_bound']
                 , env_params['max_episode_length'],len(env_params['counts']),env_params['counts'],
@@ -236,7 +228,7 @@ def get_top_k_betweenness(scale, n_channels, src, graph_nodes, graph,alpha=2):
      if src in nodes_by_betweenness:
          del nodes_by_betweenness[src]
      sorted_by_betweenness = dict(sorted(nodes_by_betweenness.items(), key=lambda item: item[1]))
-     top_k_betweenness = list(sorted_by_betweenness.keys())[-n_channels:]
+     top_k_betweenness = list(sorted_by_betweenness.keys())[:n_channels]
      top_k_betweenness = [graph_nodes.index(item) for item in top_k_betweenness if item in graph_nodes]
     #  top_k_capacity = list(sorted_by_betweenness.values())[-n_channels:]
     #  top_k_capacity = [round(scale*(elem+alpha*max(top_k_capacity))/(sum(top_k_capacity)+n_channels*alpha*max(top_k_capacity))) for elem in top_k_capacity]
