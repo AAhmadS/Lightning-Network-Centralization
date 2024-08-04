@@ -1,3 +1,11 @@
+import os
+import sys
+
+current_file_directory = os.path.dirname(os.path.realpath(__file__))
+project_root = os.path.abspath(os.path.join(current_file_directory, '..'))
+sys.path.append(project_root)
+
+
 from utils import load_data, make_agent, make_env, load_model
 from stable_baselines3 import SAC, TD3, PPO
 from numpy import load
@@ -42,7 +50,7 @@ def train(env_params, train_params, tb_log_dir, tb_name, log_dir, seed):
 
     #Add Callback for early stopping
     callback = EarlyStoppingCallback(check_freq=10, n_steps_without_progress=1000)
-    model.learn(total_timesteps=train_params['total_timesteps'], tb_log_name=tb_name)
+    model.learn(total_timesteps=train_params['total_timesteps'], tb_log_name=tb_name, log_interval=1)
 
     # model.learn(total_timesteps=train_params['total_timesteps'], tb_log_name=tb_name)
     model.save(log_dir+tb_name)
@@ -68,14 +76,14 @@ def main():
     parser.add_argument('--log_dir', default='plotting/tb_results/trained_model/')
     parser.add_argument('--n_seed', type=int, default=1) # 5
     parser.add_argument('--total_timesteps', type=int, default=300000)
-    parser.add_argument('--max_episode_length', type=int, default=3)
-    parser.add_argument('--local_size', type=int, default=10)
+    parser.add_argument('--max_episode_length', type=int, default=5)
+    parser.add_argument('--local_size', type=int, default=50)
     parser.add_argument('--counts', default=[200, 200, 200], type=lambda s: [int(item) for item in s.split(',')])
     parser.add_argument('--amounts', default=[10000, 50000, 100000], type=lambda s: [int(item) for item in s.split(',')])
     parser.add_argument('--epsilons', default=[.6, .6, .6], type=lambda s: [float(item) for item in s.split(',')])
     parser.add_argument('--device', default='auto')
     parser.add_argument('--max_capacity', type = int, default=1e7) #SAT
-    parser.add_argument('--n_channels', type=int, default=3)
+    parser.add_argument('--n_channels', type=int, default=5)
     parser.add_argument('--mode', type=str, default='channel_openning')#TODO: add this arg to all scripts
     parser.add_argument('--capacity_upper_scale_bound', type=int, default=10)
     parser.add_argument('--local_heads_number', type=int, default=5)

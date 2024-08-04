@@ -1,9 +1,6 @@
 import sys
 import os
 
-# project_root = os.path.dirname(os.path.realpath(__file__))
-# stable_path = os.path.join(project_root, "stable-baselines3")
-# sys.path.append(stable_path)
 
 import numpy as np
 import stable_baselines3
@@ -14,18 +11,17 @@ from env.multi_channel import FeeEnv
 import networkx as nx
 import os
 import pickle
-import graph_embedding_processing
 from sklearn.model_selection import train_test_split
-from model.GATv2_feature_extractor import CustomGATv2Extractor
+from model.GNNFeatureExtractor import CustomGATv2Extractor
 from model.custom_buffer import MyCustomDictRolloutBuffer
 from stable_baselines3.common.env_util import make_vec_env
-from model.Transformer_feature_extractor import CustomTransformer
+from model.Transformer_policy import CustomActorCriticPolicy
 
 
 
 def make_agent(env, algo, device, tb_log_dir):
     #NOTE: You must use `MultiInputPolicy` when working with dict observation space, not MlpPolicy
-    policy = "MlpPolicy"
+    policy = CustomActorCriticPolicy
     # policy = "MultiInputPolicy"
     # policy = Custom_policy
     # create model
@@ -40,13 +36,16 @@ def make_agent(env, algo, device, tb_log_dir):
         #     features_extractor_class=CustomTransformer,
         #     features_extractor_kwargs=dict(features_dim=128, embed_dim=128, nhead=4, num_layers=3),
         # )
-        policy_kwargs = dict(net_arch=dict(pi=[64, 64, 64, 64], qf=[64, 64, 64, 64]))
+        policy_kwargs = dict(
+            net_arch=dict(pi=[64, 64, 64, 64], qf=[64, 64, 64, 64]),
+            features_extractor_kwargs = dict(features_dim=1600)
+            )
 
         # Instantiate the PPO agent with the custom policy
         # model = PPO(policy, env, device=device, tensorboard_log=tb_log_dir,rollout_buffer_class
         # = MyCustomDictRolloutBuffer, policy_kwargs=policy_kwargs, verbose=1)
         # model = PPO(policy, env, verbose=1, device=device, tensorboard_log=tb_log_dir, n_steps=3, batch_size=12, gamma=1)
-        model = PPO(policy, env, verbose=1, device=device, policy_kwargs=policy_kwargs, tensorboard_log=tb_log_dir, n_steps=10, batch_size=40, gamma=1)
+        model = PPO(policy, env, verbose=1, device=device, policy_kwargs=policy_kwargs, tensorboard_log=tb_log_dir, n_steps=500, batch_size=50, gamma=1)
         # model = PPO(policy, env, verbose=1, device=device, tensorboard_log=tb_log_dir, gamma=1)
 
     elif algo == "TRPO":
@@ -207,10 +206,7 @@ def get_channels_and_capacities_based_on_strategy(strategy, capacity_upper_scale
         action = get_random_channels_and_capacities(capacity_upper_scale_bound, n_channels, n_nodes)
     if strategy == 'top_k_betweenness':
         action = get_top_k_betweenness(capacity_upper_scale_bound, n_channels, src, graph_nodes, graph, time_step)
-    if strategy == 'bottom_k_betweenness':
-        action = get_bottom_k_betweenness(capacity_upper_scale_bound, n_channels, src, graph_nodes, graph, time_step)
     #TODO: define basline strategy for random choose channels and capacities index.
-    
 
     return action
 
@@ -227,23 +223,8 @@ def get_top_k_betweenness(scale, n_channels, src, graph_nodes, graph, time_step,
 
      print("time_step:",time_step)
      
-     return [top_k_betweenness[time_step]] + [top_k_capacity[time_step]]
-    #  return top_k_betweenness[time_step]
-
-def get_bottom_k_betweenness(scale, n_channels, src, graph_nodes, graph, time_step, alpha=2):
-     nodes_by_betweenness = nx.betweenness_centrality(graph)
-     sorted_by_betweenness = dict(sorted(nodes_by_betweenness.items(), key=lambda item: item[1]))
-     top_k_betweenness = list(sorted_by_betweenness.keys())[-n_channels:]
-
-     top_k_betweenness = [graph_nodes.index(item) for item in top_k_betweenness if item in graph_nodes]
-    #  top_k_capacity = list(sorted_by_betweenness.values())[-n_channels:]
-    #  top_k_capacity = [round(scale*(elem+alpha*max(top_k_capacity))/(sum(top_k_capacity)+n_channels*alpha*max(top_k_capacity))) for elem in top_k_capacity]
-     scale = 5
-     top_k_capacity  = [scale] * n_channels
-
-     print("time_step:",time_step)
-     
-     return [top_k_betweenness[time_step]] + [top_k_capacity[time_step]]
+    #  return [top_k_betweenness[time_step]] + [top_k_capacity[time_step]]
+     return top_k_betweenness[time_step]
 
      
 def get_random_channels_and_capacities(capacity_upper_scale_bound,n_channels,n_nodes):
