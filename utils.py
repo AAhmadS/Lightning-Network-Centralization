@@ -45,7 +45,7 @@ def make_agent(env, algo, device, tb_log_dir):
         # model = PPO(policy, env, device=device, tensorboard_log=tb_log_dir,rollout_buffer_class
         # = MyCustomDictRolloutBuffer, policy_kwargs=policy_kwargs, verbose=1)
         # model = PPO(policy, env, verbose=1, device=device, tensorboard_log=tb_log_dir, n_steps=3, batch_size=12, gamma=1)
-        model = PPO(policy, env, verbose=1, device=device, policy_kwargs=policy_kwargs, tensorboard_log=tb_log_dir, n_steps=500, batch_size=50, gamma=1)
+        model = PPO(policy, env, verbose=1, device=device, policy_kwargs=policy_kwargs, tensorboard_log=tb_log_dir, n_steps=100, batch_size=50, gamma=1)
         # model = PPO(policy, env, verbose=1, device=device, tensorboard_log=tb_log_dir, gamma=1)
 
     elif algo == "TRPO":
