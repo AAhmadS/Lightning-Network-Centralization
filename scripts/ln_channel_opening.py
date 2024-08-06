@@ -50,7 +50,7 @@ def train(env_params, train_params, tb_log_dir, tb_name, log_dir, seed):
 
     #Add Callback for early stopping
     callback = EarlyStoppingCallback(check_freq=10, n_steps_without_progress=1000)
-    model.learn(total_timesteps=train_params['total_timesteps'], tb_log_name=tb_name, log_interval=1)
+    model.learn(total_timesteps=train_params['total_timesteps'], tb_log_name=tb_name, log_interval=5)
 
     # model.learn(total_timesteps=train_params['total_timesteps'], tb_log_name=tb_name)
     model.save(log_dir+tb_name)

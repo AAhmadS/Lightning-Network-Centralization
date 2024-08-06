@@ -19,10 +19,10 @@ class CustomGATv2Extractor(BaseFeaturesExtractor):
     
     The `forward` method takes an observation dictionary as input, which contains the node features, edge indices, and edge attributes. It applies the two GATv2 convolutions to the input, and returns a tensor of output feature vectors, where each row corresponds to a node in the graph.
     """
-    def __init__(self, observation_space, features_dim=32, hidden_size=32, heads=4, dropout_rate=0.2):
+    def __init__(self, observation_space, features_dim=128, hidden_size=128, heads=4, dropout_rate=0.2):
         super(CustomGATv2Extractor, self).__init__(observation_space, features_dim)
         num_features = observation_space['node_features'].shape[1]
-        num_edge_features = observation_space['edge_attr'].shape[1]
+        num_edge_features = observation_space['edge_features'].shape[1]
         
         self.conv1 = GATv2Conv(num_features, hidden_size, heads=heads, edge_dim=num_edge_features, dropout=dropout_rate, concat=False)
         self.conv2 = GATv2Conv(hidden_size, hidden_size, heads=heads, edge_dim=num_edge_features, dropout=dropout_rate, concat=False)
@@ -32,7 +32,7 @@ class CustomGATv2Extractor(BaseFeaturesExtractor):
         for i in range(len(observations['node_features'])):
             x = observations['node_features'][i].clone().detach().float()
             edge_index = observations['edge_index'][i].clone().detach().long()
-            edge_attr = observations['edge_attr'][i].clone().detach().float()
+            edge_attr = observations['edge_features'][i].clone().detach().float()
             data = Data(x=x.squeeze(0), edge_index=edge_index.squeeze(0), edge_attr=edge_attr.squeeze(0))
             data_list.append(data)
         

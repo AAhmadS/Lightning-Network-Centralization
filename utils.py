@@ -37,15 +37,16 @@ def make_agent(env, algo, device, tb_log_dir):
         #     features_extractor_kwargs=dict(features_dim=128, embed_dim=128, nhead=4, num_layers=3),
         # )
         policy_kwargs = dict(
-            net_arch=dict(pi=[64, 64, 64, 64], qf=[64, 64, 64, 64]),
-            features_extractor_kwargs = dict(features_dim=1600)
+            net_arch=dict(pi=[], qf=[64, 64]),
+            features_extractor_class = CustomGATv2Extractor,
+            features_extractor_kwargs = dict(features_dim = 128)
             )
 
         # Instantiate the PPO agent with the custom policy
         # model = PPO(policy, env, device=device, tensorboard_log=tb_log_dir,rollout_buffer_class
         # = MyCustomDictRolloutBuffer, policy_kwargs=policy_kwargs, verbose=1)
         # model = PPO(policy, env, verbose=1, device=device, tensorboard_log=tb_log_dir, n_steps=3, batch_size=12, gamma=1)
-        model = PPO(policy, env, verbose=1, device=device, policy_kwargs=policy_kwargs, tensorboard_log=tb_log_dir, n_steps=100, batch_size=50, gamma=1)
+        model = PPO(policy, env, verbose=1, device=device, policy_kwargs=policy_kwargs, tensorboard_log=tb_log_dir, n_steps=5, batch_size=20, gamma=1)
         # model = PPO(policy, env, verbose=1, device=device, tensorboard_log=tb_log_dir, gamma=1)
 
     elif algo == "TRPO":
