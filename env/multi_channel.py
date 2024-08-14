@@ -72,12 +72,6 @@ class FeeEnv(gym.Env):
         self.LN_graph = LN_graph
         self.max_episode_length = max_episode_length
         
-        
-        self.current_episode_length = 2
-        self.reward_to_beat = [0,0,800, 2800, 4200,0]
-        self.last10_rewards = [0] * 10
-        self.pointer = 0
-        
         # self.seed = seed
         self.src = self.data['src']
         self.providers = data['providers']
@@ -98,7 +92,7 @@ class FeeEnv(gym.Env):
 
         
         #Action Space
-        self.action_space = spaces.MultiDiscrete([self.n_nodes, self.capacity_upper_scale_bound - 1])
+        self.action_space = spaces.MultiDiscrete([self.n_nodes, self.capacity_upper_scale_bound])
 
         self.num_node_features = len(next(iter(self.simulator.current_graph.nodes(data=True)))[1]['feature'])
         self.num_edge_features = len(next(iter(self.simulator.current_graph.edges(data=True)))[2]) -1
@@ -126,20 +120,21 @@ class FeeEnv(gym.Env):
         self.edge_features_space = spaces.Box(low=0, high=1, shape=(num_edges, self.num_edge_features), dtype=np.float32)
         self.edge_index_space = spaces.Box(low=0, high=self.n_nodes, shape=(2, num_edges), dtype=np.float32)
 
-        self.observation_space = spaces.Dict({
-            "node_features" : self.node_features_space,
-            "edge_features" : self.edge_features_space,
-            "edge_index": self.edge_index_space
-        })
+        self.observation_space = self.node_features_space
+        # self.observation_space = spaces.Dict({
+        #     "node_features" : self.node_features_space,
+        #     "edge_features" : self.edge_features_space,
+        #     "edge_index": self.edge_index_space
+        # })
         
         node_features, edge_index, edge_features = self.extract_graph_attributes(self.simulator.current_graph,["capacity", "id"])
 
-        self.state = {
-            "node_features" : node_features,
-            "edge_features": edge_features,
-            "edge_index": edge_index
-        }
-        
+        # self.state = {
+        #     "node_features" : node_features,
+        #     "edge_features": edge_features,
+        #     "edge_index": edge_index
+        # }
+        self.state = node_features
 
     def seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)
@@ -202,15 +197,9 @@ class FeeEnv(gym.Env):
 
         
 
-        info = {'TimeLimit.truncated': True if self.time_step >= self.current_episode_length else False}
+        info = {'TimeLimit.truncated': True if self.time_step >= self.max_episode_length else False}
 
-        done = self.time_step >= self.current_episode_length
-        
-        if self.total_time_step > self.current_episode_length * 1000 and np.mean(self.last10_rewards) > self.reward_to_beat[self.current_episode_length] and self.current_episode_length<self.max_episode_length:
-            self.current_episode_length+=1
-        if done:
-            self.last10_rewards[self.pointer %  10] = self.prev_reward
-            self.pointer += 1
+        done = self.time_step >= self.max_episode_length
 
         # capacities_list = np.zeros((self.n_nodes,))
         
@@ -219,19 +208,19 @@ class FeeEnv(gym.Env):
 
         node_features, edge_index, edge_features = self.extract_graph_attributes(self.simulator.current_graph,["capacity", "id"])
         # node_features = self.extract_graph_attributes(self.simulator.current_graph, transaction_amounts, exclude_attributes=['capacity', 'channel_id'])
-        # self.state = node_features
+        self.state = node_features
 
                 
 
 
 
-        self.state = {
+        # self.state = {
 
-        "node_features" : node_features,
-        "edge_features" : edge_features,
-        "edge_index": edge_index
+        # "node_features" : node_features,
+        # "edge_features" : edge_features,
+        # "edge_index": edge_index
 
-        }
+        # }
         
 
 
@@ -263,13 +252,13 @@ class FeeEnv(gym.Env):
         # self.remaining_capacity = self.max_capacity
 
         node_features, edge_index, edge_features = self.extract_graph_attributes(self.simulator.current_graph,["capacity", "id"])
-        self.state = {
-        "node_features" : node_features,
-        "edge_features" : edge_features,
-        "edge_index": edge_index
-        }
+        # self.state = {
+        # "node_features" : node_features,
+        # "edge_features" : edge_features,
+        # "edge_index": edge_index
+        # }
         # node_features = self.extract_graph_attributes(self.simulator.current_graph, [], exclude_attributes=['capacity', 'channel_id'])
-        # self.state = node_features
+        self.state = node_features
 
         return self.state 
 

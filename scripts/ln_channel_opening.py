@@ -76,14 +76,14 @@ def main():
     parser.add_argument('--log_dir', default='plotting/tb_results/trained_model/')
     parser.add_argument('--n_seed', type=int, default=1) # 5
     parser.add_argument('--total_timesteps', type=int, default=300000)
-    parser.add_argument('--max_episode_length', type=int, default=5)
-    parser.add_argument('--local_size', type=int, default=50)
+    parser.add_argument('--max_episode_length', type=int, default=3)
+    parser.add_argument('--local_size', type=int, default=10)
     parser.add_argument('--counts', default=[200, 200, 200], type=lambda s: [int(item) for item in s.split(',')])
     parser.add_argument('--amounts', default=[10000, 50000, 100000], type=lambda s: [int(item) for item in s.split(',')])
     parser.add_argument('--epsilons', default=[.6, .6, .6], type=lambda s: [float(item) for item in s.split(',')])
     parser.add_argument('--device', default='auto')
     parser.add_argument('--max_capacity', type = int, default=1e7) #SAT
-    parser.add_argument('--n_channels', type=int, default=5)
+    parser.add_argument('--n_channels', type=int, default=3)
     parser.add_argument('--mode', type=str, default='channel_openning')#TODO: add this arg to all scripts
     parser.add_argument('--capacity_upper_scale_bound', type=int, default=10)
     parser.add_argument('--local_heads_number', type=int, default=5)

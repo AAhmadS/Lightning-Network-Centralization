@@ -1,6 +1,9 @@
 import sys
 import os
 
+# current_file_directory = os.path.dirname(os.path.realpath(__file__))
+# stable_path = os.path.abspath(os.path.join(current_file_directory, "custom_stable_baselines-main"))
+# sys.path.append(stable_path)
 
 import numpy as np
 import stable_baselines3
@@ -15,8 +18,7 @@ from sklearn.model_selection import train_test_split
 from model.GNNFeatureExtractor import CustomGATv2Extractor
 from model.custom_buffer import MyCustomDictRolloutBuffer
 from stable_baselines3.common.env_util import make_vec_env
-from model.Transformer_policy import CustomActorCriticPolicy
-
+from model.Transformer_policy import CustomActorCriticPolicy, NullFeatureExtractor
 
 
 def make_agent(env, algo, device, tb_log_dir):
@@ -24,30 +26,34 @@ def make_agent(env, algo, device, tb_log_dir):
     policy = CustomActorCriticPolicy
     # policy = "MultiInputPolicy"
     # policy = Custom_policy
+    # policy = "MlpPolicy"
     # create model
     if algo == "PPO":
         from stable_baselines3 import PPO
-        # Create the custom policy
-        # policy_kwargs = dict(
-        #     features_extractor_class=CustomGATv2Extractor,
-        #     features_extractor_kwargs=dict(features_dim=64),
-        # )
-        # policy_kwargs = dict(
-        #     features_extractor_class=CustomTransformer,
-        #     features_extractor_kwargs=dict(features_dim=128, embed_dim=128, nhead=4, num_layers=3),
-        # )
+
         policy_kwargs = dict(
-            net_arch=dict(pi=[], qf=[64, 64]),
-            features_extractor_class = CustomGATv2Extractor,
-            features_extractor_kwargs = dict(features_dim = 128)
+            net_arch=dict(pi=[64, 64, 64, 64], vf=[64, 64, 64, 64]),
+            features_extractor_class = NullFeatureExtractor,
+            features_extractor_kwargs = dict(features_dim = 64)
+            # optimizer_kwargs=dict(weight_decay=1e-5)
             )
 
-        # Instantiate the PPO agent with the custom policy
-        # model = PPO(policy, env, device=device, tensorboard_log=tb_log_dir,rollout_buffer_class
-        # = MyCustomDictRolloutBuffer, policy_kwargs=policy_kwargs, verbose=1)
-        # model = PPO(policy, env, verbose=1, device=device, tensorboard_log=tb_log_dir, n_steps=3, batch_size=12, gamma=1)
-        model = PPO(policy, env, verbose=1, device=device, policy_kwargs=policy_kwargs, tensorboard_log=tb_log_dir, n_steps=5, batch_size=20, gamma=1)
-        # model = PPO(policy, env, verbose=1, device=device, tensorboard_log=tb_log_dir, gamma=1)
+        model = PPO(policy, 
+                    env, 
+                    verbose=1, 
+                    device=device, 
+                    policy_kwargs=policy_kwargs, 
+                    tensorboard_log=tb_log_dir, 
+                    n_steps=30,
+                    batch_size = 120, 
+                    learning_rate=2.5e-4,  # Adjust the learning rate
+                    # clip_range=0.1,  # Reduce the clipping range for stability
+                    # n_epochs=10,  # Number of training epochs per update
+                    # ent_coef=0.01,  # Entropy coefficient to balance exploration and exploitation
+                    # gamma=0.99,  # Discount factor for rewards
+                    # gae_lambda=0.95,  # GAE lambda for advantage estimation
+                    # max_grad_norm=0.5  # Gradient clipping for stability
+                    )
 
     elif algo == "TRPO":
         from sb3_contrib import TRPO
