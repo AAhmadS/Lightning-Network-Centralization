@@ -1,0 +1,6 @@
+[submodule "stable-baselines3"]
+	path = stable-baselines3
+	url = https://github.com/AAhmadS/stable-baselines3
+[submodule "custom-sb3/sb3"]
+	path = custom-sb3/sb3
+	url = https://github.com/BlueBug12/custom_stable_baselines.git
