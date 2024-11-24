@@ -41,8 +41,9 @@ All dependencies will be handled using the command :
 ### Run
 
 ```
-python3 -m scripts.ln_channel_opening --algo PPO --tb_name PPO_tensorboard
-python3 -m scripts.baselines --strategy random 
+python3 -m scripts.ln_channel_opening --algo PPO --model Transformer --tb_name PPO_tensorboard
+python3 -m scripts.baselines --strategy random
+python3 -m scripts.evaluation --model --model Transformer
 ```
 
 ### Parameters
@@ -70,7 +71,7 @@ baselines:
 
 | Parameter              | Default | choices                                      |
 |------------------------|--------|----------------------------------------------|
-| _--strategy_            | top_k_betweenness | random, top_k_betweenness     |
+| _--strategy_            | top_k_betweenness | random, top_k_betweenness, top_k_degree, bottom_k_betweenness, bottom_k_degree   |
 
 
 
