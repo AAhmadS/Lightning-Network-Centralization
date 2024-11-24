@@ -70,6 +70,7 @@ def make_envs_models(env_params, log_dir, tb_names):
         env = make_env(data, environ_params, seed, multiple_env = False)
         envs.append(env)
         Transformer_policy.MAX_POSITION_EMBEDDING = local_size
+        Transformer_policy.MODEL = env_params['model']
         models.append(PPO.load(os.path.join(log_dir, tb_name),env))
 
     
@@ -160,7 +161,8 @@ def main():
                   'capacity_upper_scale_bound': args.capacity_upper_scale_bound,
                   'local_heads_number':args.local_heads_number,
                   'sampling_k':args.sampling_k,
-                  'sampling_stages':args.sampling_stages}
+                  'sampling_stages':args.sampling_stages,
+                  'model':'Transformer'}
 
     
     n_seed = 1

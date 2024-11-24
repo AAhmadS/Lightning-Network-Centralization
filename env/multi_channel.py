@@ -24,7 +24,7 @@ class JCoNaREnv(gym.Env):
 
 
     def __init__(self, data, max_capacity, max_episode_length, number_of_transaction_types, counts,
-                  amounts, epsilons, capacity_upper_scale_bound, LN_graph, seed):
+                  amounts, epsilons, capacity_upper_scale_bound, model, LN_graph, seed):
         
         self.max_capacity = max_capacity
         self.capacity_upper_scale_bound = capacity_upper_scale_bound
@@ -40,7 +40,7 @@ class JCoNaREnv(gym.Env):
         self.total_time_step = 0
         self.time_step = 0
         self.prev_action = [] 
-        
+        self.model = model
 
         self.undirected_attributed_LN_graph = self.set_undirected_attributed_LN_graph()
         self.transaction_types = generate_transaction_types(number_of_transaction_types, counts, amounts, epsilons)
@@ -57,21 +57,19 @@ class JCoNaREnv(gym.Env):
         self.num_node_features = len(next(iter(self.simulator.current_graph.nodes(data=True)))[1]['feature'])
         self.num_edge_features = len(next(iter(self.simulator.current_graph.edges(data=True)))[2])
 
-        
-        ## Observation Space: NOTE: uncomment in case of using Graph Observation Space
+        if "GNN" in self.model:
 
-        # node_space = Box(low=-np.inf, high=np.inf, shape=(self.num_node_features,), dtype=np.float32)
-        # edge_space = Box(low=-np.inf, high=np.inf, shape=(self.num_edge_features,), dtype=np.float32)
+            node_space = Box(low=-np.inf, high=np.inf, shape=(self.num_node_features,), dtype=np.float32)
+            edge_space = Box(low=-np.inf, high=np.inf, shape=(self.num_edge_features,), dtype=np.float32)
 
-        # self.observation_space = Graph(node_space=node_space, edge_space=edge_space)
-        # self.update_graph_features(self.simulator.current_graph)
-        # graph_instance = self.convert_nx_to_graph_instance(self.simulator.current_graph)
-        # self.state = graph_instance
-
-        # NOTE: uncomment in case of using non-grpah observation space
-        self.observation_space = Box(low=-np.inf, high=np.inf, shape=(self.n_nodes, self.num_node_features), dtype=np.float32)
-        node_features = self.extract_graph_attributes(self.simulator.current_graph, [])        
-        self.state = node_features
+            self.observation_space = Graph(node_space=node_space, edge_space=edge_space)
+            self.update_graph_features(self.simulator.current_graph)
+            graph_instance = self.convert_nx_to_graph_instance(self.simulator.current_graph)
+            self.state = graph_instance
+        else:
+            self.observation_space = Box(low=-np.inf, high=np.inf, shape=(self.n_nodes, self.num_node_features), dtype=np.float32)
+            node_features = self.extract_graph_attributes(self.simulator.current_graph, [])        
+            self.state = node_features
         
         print("num_node_features:", self.num_node_features)
         # print("num_edge_features:", self.num_edge_features)
@@ -135,15 +133,16 @@ class JCoNaREnv(gym.Env):
         
         ## NOTE: uncomment in case of using graph evolution option
         # self.simulator.current_graph = self.evolve_graph()
+        
+        if "GNN" in self.model:
+            self.update_graph_features(self.simulator.current_graph)
+            graph_instance = self.convert_nx_to_graph_instance(self.simulator.current_graph)
+            self.state = graph_instance
+        else:
+            node_features = self.extract_graph_attributes(self.simulator.current_graph, transaction_amounts)
+            self.state = node_features
 
-        # NOTE: uncomment in case of using non-grpah observation space
-        node_features = self.extract_graph_attributes(self.simulator.current_graph, transaction_amounts)
-        self.state = node_features
 
-        ## NOTE: uncomment in case of using Graph Observation Space
-        # self.update_graph_features(self.simulator.current_graph)
-        # graph_instance = self.convert_nx_to_graph_instance(self.simulator.current_graph)
-        # self.state = graph_instance
     
         return self.state, reward, done, info
     
@@ -168,16 +167,16 @@ class JCoNaREnv(gym.Env):
         self.prev_action = []
         self.prev_reward = 0
         self.set_new_graph_environment()
+
+        if "GNN" in self.model:
+            self.update_graph_features(self.simulator.current_graph)
+            graph_instance = self.convert_nx_to_graph_instance(self.simulator.current_graph)
+            self.state = graph_instance
         
-        # NOTE: uncomment in case of using non-graph Observation Space
-        node_features = self.extract_graph_attributes(self.simulator.current_graph, [])
-        self.state = node_features
+        else:
+            node_features = self.extract_graph_attributes(self.simulator.current_graph, [])
+            self.state = node_features
         
-        
-        ## NOTE: uncomment in case of using graph observation space
-        # self.update_graph_features(self.simulator.current_graph)
-        # graph_instance = self.convert_nx_to_graph_instance(self.simulator.current_graph)
-        # self.state = graph_instance
 
         return self.state 
 
@@ -393,63 +392,6 @@ class JCoNaREnv(gym.Env):
             node_features[self.simulator.map_nodes_to_id[node[0]]][3] = 0
             if node[0] in self.simulator.trgs:
                 node_features[self.simulator.map_nodes_to_id[node[0]]][3] = self.simulator.shares[node[0]]/self.capacity_upper_scale_bound
-        
-
-
-        # if self.time_step == 1 :
-        #     for e in G.edges(data=True):
-        #         node_features[self.simulator.map_nodes_to_id[e[0]]][3] = 0
-
-
-
-        # for e in G.edges(data=True):
-        #     node_features[self.simulator.map_nodes_to_id[e[0]]][3] += e[2]['capacity'] / 2
-
-        # max_list = self.get_normalizer_configs()
-        # max_total_budget = max(node_features[:,3])
-
-
-
-        # for i in range(len(self.graph_nodes)):
-        #     node_features[i][0] = degrees[nodes_list[i]]
-        #     # node_features[i][1] = eigenvectors[nodes_list[i]]
-        #     node_features[i][2] = 0
-        #     if i in trgs:
-        #         # node_features[i][4] = 
-        #         # print("Target node : ",nodes_list[i])
-        #         # print("trgs:", self.simulator.trgs)
-        #         node_features[i][2] = self.simulator.network_dictionary[(self.src,nodes_list[i])][0] / self.max_capacity
-
-                # node_features[i][4] = transaction_amounts[trgs.index(i)] / max_list[3]
-            # node_features[i][5] = normalized_transaction_amounts[i]
-
-            # node_features[i][5] = node_features[i][5]/max_list[0]
-            # node_features[i][6] = node_features[i][6]/max_list[1]
-            # node_features[i][3] = node_features[i][3] / max_total_budget
-      
-
-
-            
-        
-        
-        # Extract edge index
-        # edge_index = np.array([(self.simulator.map_nodes_to_id[x], self.simulator.map_nodes_to_id[y]) for (x,y) in G.edges]).T
-
-
-        # Extract multiple edge attributes (excluding specified attributes)
-        # max_list = self.get_normalizer_configs()
-        # edge_attr_list = []
-        # for e in G.edges(data=True):
-            # filtered_attrs = {key: e[2][key] for key in e[2] if key not in exclude_attributes}
-            # filtered_attrs = list(filtered_attrs.values())
-            # edge_attr_list.append([filtered_attrs[i]/max_list[i] for i in range(len(max_list))])
-        # edge_attr = np.array(edge_attr_list)
-
-        # self.compare_and_update(edge_attr)
-        # return node_features, edge_index, edge_attr
-        # return node_features, edge_index
-
-
 
         return node_features
 
@@ -469,7 +411,6 @@ class JCoNaREnv(gym.Env):
         else:
             normalized_transaction_amounts = self.simulator.nodes_cumulative_trs_amounts / np.sum(self.simulator.nodes_cumulative_trs_amounts)
             
-        
         #set node features 
         for node in nodes_list:
             node_features[self.simulator.map_nodes_to_id[node[0]]][0] = degrees[node[0]]
@@ -490,7 +431,6 @@ class JCoNaREnv(gym.Env):
         edge_links = np.array([(self.simulator.map_nodes_to_id[x], self.simulator.map_nodes_to_id[y]) for (x,y) in nx_graph.edges]).T
 
 
-        
         return GraphInstance(nodes=node_features, edges=edge_features, edge_links=edge_links)
     
     def get_updates(self):

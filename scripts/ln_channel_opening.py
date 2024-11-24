@@ -32,8 +32,9 @@ def train(env_params, train_params, tb_log_dir, tb_name, log_dir, seed):
     # envs = SubprocVecEnv([make_multiple_env(i, data, env_params, seed+i) for i in range(num_cpu)])
     
     Transformer_policy.MAX_POSITION_EMBEDDING = env_params['local_size'] # do not change
+    Transformer_policy.MODEL = train_params['model'] # do not change
 
-    model = make_agent(envs, train_params['algo'], train_params['device'], tb_log_dir)
+    model = make_agent(envs, train_params['algo'], train_params['device'], train_params["model"], tb_log_dir)
 
     # NOTE: uncomment when loading a pretrained model
     # model = load_model("PPO", env_params,"plotting/tb_results/trained_model/PPO_tensorboard_50nodes_5channel_DeepMLP_dynamic_15M_Episode_editedLog")
@@ -41,16 +42,14 @@ def train(env_params, train_params, tb_log_dir, tb_name, log_dir, seed):
 
 
     # NOTE: uncomment when best model is needed. set the desired threshold
-    callback_on_best = StopTrainingOnRewardThreshold(reward_threshold=0.795, verbose=1)
-    eval_callback = EvalCallback(envs, callback_on_new_best=callback_on_best, verbose=1, n_eval_episodes=30,eval_freq = 1500, best_model_save_path = r"plotting\tb_results\trained_model")
+    callback_on_best = StopTrainingOnRewardThreshold(reward_threshold=0.9, verbose=1)
+    eval_callback = EvalCallback(envs, callback_on_new_best=callback_on_best, verbose=1, n_eval_episodes=100,eval_freq = 1500, best_model_save_path = r"plotting\tb_results\trained_model")
     model.learn(total_timesteps=train_params['total_timesteps'], tb_log_name=tb_name, log_interval=10, callback = eval_callback)
 
     # model.learn(total_timesteps=train_params['total_timesteps'], tb_log_name=tb_name, log_interval=10) 
     
     model.save(log_dir+tb_name)
     
-    
-
 
 def main():
     """
@@ -65,6 +64,7 @@ def main():
     import argparse
     parser = argparse.ArgumentParser(description='Lightning network environment for multichannel')
     parser.add_argument('--algo', choices=['PPO', 'TRPO', 'SAC', 'TD3', 'A2C', 'DDPG'], required=True)
+    parser.add_argument('--model', choices=['GNN', 'MLP', 'Transformer', 'GNN+Transformer'], required=True)
     parser.add_argument('--data_path', default='data/data.json')
     parser.add_argument('--merchants_path', default='data/merchants.json')
     parser.add_argument('--tb_log_dir', default='plotting/tb_results')
@@ -93,7 +93,8 @@ def main():
 
     train_params = {'algo': args.algo,
                     'total_timesteps': args.total_timesteps,
-                    'device': args.device}
+                    'device': args.device,
+                    'model':args.model}
 
     env_params = {'mode' : args.mode,
                   'data_path': args.data_path,
@@ -108,7 +109,8 @@ def main():
                   'capacity_upper_scale_bound': args.capacity_upper_scale_bound,
                   'local_heads_number':args.local_heads_number,
                   'sampling_k':args.sampling_k,
-                  'sampling_stages':args.sampling_stages}
+                  'sampling_stages':args.sampling_stages,
+                  'model':args.model}
 
     
 

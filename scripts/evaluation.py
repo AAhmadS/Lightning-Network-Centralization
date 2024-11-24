@@ -16,6 +16,7 @@ def evaluate(model, env, gamma):
     actions = []
     while not done:
         action, _state = model.predict(state)
+        # action[1] = 5
         actions.append(action[1])
 
         print("ACTION:",action)
@@ -34,6 +35,7 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Baselines')
     parser.add_argument('--algo', choices=['PPO', 'TRPO', 'SAC', 'TD3', 'A2C', 'DDPG'], default='PPO')
+    parser.add_argument('--model', choices=['Transformer', 'GNN', 'MLP', 'Transformer+GNN'], required=True)
     parser.add_argument('--log_dir', default='Transformer-100-10')
     parser.add_argument('--data_path', default='data/data.json')
     parser.add_argument('--merchants_path', default='data/merchants.json')
@@ -73,12 +75,13 @@ if __name__ == '__main__':
                   'max_capacity': args.max_capacity,
                   'n_channels': args.n_channels,
                   'capacity_upper_scale_bound': args.capacity_upper_scale_bound,
-                  'local_heads_number':args.local_heads_number}
+                  'local_heads_number':args.local_heads_number,
+                  'model': args.model}
 
     log_dir_base_path = "plotting/tb_results/trained_model"
     algos = ['PPO']
     Transformer_policy.MAX_POSITION_EMBEDDING = env_params['local_size'] # do not change
-
+    Transformer_policy.MODEL = env_params['model'] # do not change
 
     algo_reward_dict = dict()
     for algo in algos:
@@ -92,8 +95,8 @@ if __name__ == '__main__':
             env = make_env(data, env_params, seed, multiple_env = False)
             model = PPO.load(os.path.join(log_dir_base_path, args.log_dir),env)
             # File path to save the list
-            actions_path = f'{args.log_dir}_actions.pkl'
-            rewards_path = f'{args.log_dir}_rewards.pkl'
+            actions_path = f'{args.log_dir}_U_actions.pkl'
+            rewards_path = f'{args.log_dir}_U_rewards.pkl'
             actions = []
             for i in range(1000):
                 discounted_reward, actions_e = evaluate(model, env, gamma=1)

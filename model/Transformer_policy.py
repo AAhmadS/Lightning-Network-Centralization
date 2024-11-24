@@ -38,6 +38,7 @@ import torch_geometric as thg
 from model.GNNFeatureExtractor import GraphFeaturesExtractor2
 
 MAX_POSITION_EMBEDDING = 100
+MODEL = "Transformer"
 def get_flattened_obs_dim(observation_space: spaces.Space) -> int:
     """
     Get the dimension of the observation space when flattened.
@@ -55,10 +56,6 @@ def get_flattened_obs_dim(observation_space: spaces.Space) -> int:
     else:
         # Use Gym internal method
         return spaces.utils.flatdim(observation_space)
-               
-'''
-Cross attention module
-''' 
 
 import torch
 import torch.nn as nn
@@ -186,16 +183,19 @@ class TransformerWithMaskedAttention_cls(nn.Module):
         hidden_dim = x.size(2)
         
         # Create a dummy tensor and concatenate it to the input
-        dummy_tensor = torch.ones(batch_size, 1, hidden_dim, device=x.device)
-        x = torch.cat([dummy_tensor, x], dim=1)  # [batch_size, 1 + n_nodes, hidden_dim]
+        dummy_tensor = torch.zeros(batch_size, 1, hidden_dim, device=x.device)
+        state_tensor = torch.zeros(batch_size, 1, hidden_dim, device=x.device)
+        x = torch.cat([dummy_tensor, state_tensor, x], dim=1)  # [batch_size, 1 + n_nodes, hidden_dim]
 
         # Adjust the mask to include the dummy
-        mask = torch.cat([-torch.ones((batch_size, 1), dtype=torch.int, device=mask.device), mask], dim=1)  # [batch_size, 1 + n_nodes]
+        mask = torch.cat([-torch.ones((batch_size, 2), dtype=torch.int, device=mask.device), mask], dim=1)  # [batch_size, 1 + n_nodes]
 
         mask = mask.unsqueeze(2) | mask.unsqueeze(1)   # [batch_size, 1 + n_nodes, 1 + n_nodes]
-        mask = mask.float().masked_fill(mask == 0, float(0.0)).masked_fill(mask == 1, float(0.0)).masked_fill(mask == -1, float('-inf'))
+        mask = mask.float().masked_fill(mask == 0, float(0.0)).masked_fill(mask == 1, float(0.0)).masked_fill(mask == -1, float(0.0))
 
         mask[:, :, 0] = 0.0
+        mask[:, :, 1] = 0.0
+
 
         mask = mask.repeat_interleave(self.num_heads, dim=0)  # [batch_size * num_heads, 1 + n_nodes, 1 + n_nodes]
         # Pass through each transformer layer
@@ -205,10 +205,10 @@ class TransformerWithMaskedAttention_cls(nn.Module):
 
         # Extract and return the dummy tensor (first element)
         dummy_output = x[:, 0, :]  # [batch_size, hidden_dim]
+        state = x[:,1,:]
 
-        return dummy_output, x[:,1:,:]
+        return state, dummy_output, x[:,2:,:]
         
- 
 '''
 end
 '''    
@@ -229,11 +229,6 @@ class CustomTransformerExtractor(nn.Module):
         super().__init__()
         
         device = get_device(device)
-        
-        # ## NOTE: uncomment in case of using transformer, comment if not
-        # self.embedder_pi = nn.Linear(4, feature_dim).to(device)
-        # self.transformer_pi = TransformerWithMaskedAttention(feature_dim, num_heads=num_heads, num_layers=num_layers)
-       
        
         self.embedder = nn.Linear(4,feature_dim).to(device)
         self.transformer = TransformerWithMaskedAttention_cls(feature_dim, num_heads=num_heads, num_layers=num_layers, dummy_size=feature_dim)
@@ -251,8 +246,11 @@ class CustomTransformerExtractor(nn.Module):
                 
         
         # last_layer_dim_vf = feature_dim * max_position_embedding
-        # last_layer_dim_pi = feature_dim * max_position_embedding
-        last_layer_dim_vf = feature_dim
+        if MODEL == "GNN":
+            last_layer_dim_pi = feature_dim * max_position_embedding
+            last_layer_dim_pi = feature_dim * max_position_embedding
+        else: 
+            last_layer_dim_vf = feature_dim
         last_layer_dim_pi = feature_dim
         
         # save dimensions of layers in policy and value nets
@@ -295,37 +293,31 @@ class CustomTransformerExtractor(nn.Module):
     
     def forward_actor(self, features: th.Tensor) -> th.Tensor:
 
-        x, mask = features
-        # NOTE: uncomment in case of using transformer only
-        # embedded = self.transformer(self.embedder(x), mask)
-        alloc ,embedded = self.transformer(self.embedder(x), mask)
-        
-        ## NOTE: uncomment in case of using transformer with GNN
-        # embedded = self.transformer_pi(x, mask)
-        
-        ## NOTE: uncomment in case of using transformer
-        node_scores = self.scoring_net(embedded)
+        if "Transformer" in MODEL:
+            x, mask = features
+            _,alloc ,embedded = self.transformer(self.embedder(x), mask)
+            
+            node_scores = self.scoring_net(embedded)
+            return node_scores, self.flatten(alloc) 
 
-        ##  NOTE: uncomment in case of using GNN only
-        # node_scores = self.scoring_net(x)
-        
-        return node_scores, self.flatten(alloc) # uncomment for transformer
-        # return node_scores, self.flatten(x) # uncomment for GNN only
-        
+
+        elif MODEL == "GNN":
+            node_scores = self.scoring_net(x)
+            return node_scores, self.flatten(embedded)
+        else:
+            raise ValueError(f"forward actor interfered: Model {MODEL} not supported")
+              
     def forward_critic(self, features: th.Tensor) -> th.Tensor:
-        #intuition: value net should not rely on a transformer
         input, mask = features
 
-        # NOTE: uncomment in case of using transformer only
-        # embedded = self.transformer(self.embedder(input), mask)
-        status, _ = self.transformer(self.embedder(input), mask)
-        
-        ## NOTE: uncomment in case of using transformer with GNN
-        # embedded = self.transformer_pi(input, mask)
-        
-        # return self.value_net(input) #uncomment for GNN only
-        # return self.value_net(embedded) # uncomment for transformer
-        return self.value_net(status)
+        if "Transformer" in MODEL:
+            status,_, _ = self.transformer(self.embedder(input), mask)
+            return self.value_net(status)
+
+        elif "GNN" == MODEL:
+            return self.value_net(input) 
+        else:
+            raise ValueError(f"forward critic interfered: Model {MODEL} not supported")
     
 class NullFeatureExtractor(BaseFeaturesExtractor):
     """
@@ -400,7 +392,6 @@ class TransformerMultiCategoricalDistribution(Distribution):
         log_prob = self.log_prob(actions)
         return actions, log_prob
         
-
 def custom_make_proba_distribution(
     action_space: spaces.Space, use_sde: bool = False, dist_kwargs: Optional[Dict[str, Any]] = None
 ) -> Distribution:
@@ -416,7 +407,6 @@ def custom_make_proba_distribution(
     if dist_kwargs is None:
         dist_kwargs = {}
     return TransformerMultiCategoricalDistribution(list(action_space.nvec), **dist_kwargs)
-
 
 
 class CustomActorCriticPolicy(ActorCriticPolicy):
@@ -464,29 +454,29 @@ class CustomActorCriticPolicy(ActorCriticPolicy):
         self.share_features_extractor = True
         self.action_dist = custom_make_proba_distribution(action_space, use_sde=use_sde, dist_kwargs=self.dist_kwargs)
         self._build(lr_schedule)
-    ##NOTE: uncommment in case of using GNN and custom-sb3    
-    # def obs_to_tensor(self, observation: gym.spaces.GraphInstance):
-    #         if isinstance(observation, list):
-    #             vectorized_env = True
-    #         else:
-    #             vectorized_env = False
-    #         if vectorized_env:
-    #             torch_obs = list()
-    #             for obs in observation:
-    #                 x = th.tensor(obs.nodes).float()
-    #                 #edge_index = th.tensor(obs.edge_links, dtype=th.long).t().contiguous().view(2, -1)
-    #                 edge_index = th.tensor(obs.edge_links, dtype=th.long)
-    #                 # edges = th.tensor(obs.edges, dtype=th.float)
-    #                 torch_obs.append(thg.data.Data(x=x, edge_index=edge_index))
-    #             if len(torch_obs) == 1:
-    #                 torch_obs = torch_obs[0]
-    #         else:
-    #             x = th.tensor(observation.nodes).float()
-    #             #edge_index = th.tensor(observation.edge_links, dtype=th.long).t().contiguous().view(2, -1)
-    #             edge_index = th.tensor(observation.edge_links, dtype=th.long)
-    #             # edges = th.tensor(observation.edges, dtype=th.float)
-    #             torch_obs = thg.data.Data(x=x, edge_index=edge_index)
-    #         return torch_obs, vectorized_env
+    if "GNN" in MODEL:
+        def obs_to_tensor(self, observation: gym.spaces.GraphInstance):
+                if isinstance(observation, list):
+                    vectorized_env = True
+                else:
+                    vectorized_env = False
+                if vectorized_env:
+                    torch_obs = list()
+                    for obs in observation:
+                        x = th.tensor(obs.nodes).float()
+                        #edge_index = th.tensor(obs.edge_links, dtype=th.long).t().contiguous().view(2, -1)
+                        edge_index = th.tensor(obs.edge_links, dtype=th.long)
+                        # edges = th.tensor(obs.edges, dtype=th.float)
+                        torch_obs.append(thg.data.Data(x=x, edge_index=edge_index))
+                    if len(torch_obs) == 1:
+                        torch_obs = torch_obs[0]
+                else:
+                    x = th.tensor(observation.nodes).float()
+                    #edge_index = th.tensor(observation.edge_links, dtype=th.long).t().contiguous().view(2, -1)
+                    edge_index = th.tensor(observation.edge_links, dtype=th.long)
+                    # edges = th.tensor(observation.edges, dtype=th.float)
+                    torch_obs = thg.data.Data(x=x, edge_index=edge_index)
+                return torch_obs, vectorized_env
            
     def _build_mlp_extractor(self) -> None:
          self.mlp_extractor = CustomTransformerExtractor(
@@ -522,7 +512,6 @@ class CustomActorCriticPolicy(ActorCriticPolicy):
         actions = actions.reshape((-1, *self.action_space.shape))  # type: ignore[misc]
         return actions, values, log_prob
 
-
     def _build(self, lr_schedule: Schedule) -> None:
         """
         Create the networks and the optimizer.
@@ -540,7 +529,6 @@ class CustomActorCriticPolicy(ActorCriticPolicy):
         # Init weights: use orthogonal initialization
         # with small initial weight for the output
         if self.ortho_init:
-            # TODO: check for features_extractor
             # Values from stable-baselines.
             # features_extractor/mlp values are
             # originally from openai/baselines (default gains/init_scales).
@@ -616,9 +604,9 @@ class CustomActorCriticPolicy(ActorCriticPolicy):
         latent_pi, latent_pi_score = self.mlp_extractor.forward_actor(features)
         return self._get_action_dist_from_latent(latent_pi,latent_pi_score)
     
-    ## NOTE: uncomment in case of using GNN and custom-sb3
-    # def get_distribution(self, obs: thg.data.Data):
-    #     features = self.extract_features(obs)
-    #     latent_pi = self.mlp_extractor.forward_actor(features)
-    #     return self._get_action_dist_from_latent(latent_pi)
+    if "GNN" in MODEL:
+        def get_distribution(self, obs: thg.data.Data):
+            features = self.extract_features(obs)
+            latent_pi = self.mlp_extractor.forward_actor(features)
+            return self._get_action_dist_from_latent(latent_pi)
          

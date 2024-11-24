@@ -1,7 +1,7 @@
 import sys
 import os
 
-## NOTE: uncomment in case of using graph and custom-sb3
+# # NOTE: uncomment in case of using graph and custom-sb3
 # project_root = os.path.dirname(os.path.realpath(__file__))
 # stable_path = os.path.join(project_root, "custom-sb3","sb3")
 # sys.path.append(stable_path)
@@ -23,62 +23,45 @@ from model.GNNFeatureExtractor import GraphFeaturesExtractor2
 
 
 
-def make_agent(env, algo, device, tb_log_dir):
-    ## NOTE: uncomment when using MLP
-    # policy = "MultiInputPolicy"
-    
-    # NOTE: uncomment when using transformer or GNN
-    policy = CustomActorCriticPolicy
-    # create model
+def make_agent(env, algo, device, model, tb_log_dir):
+    if model == "MLP":
+        policy =  "MultiInputPolicy"
+    else:
+        policy = CustomActorCriticPolicy
     
     if algo == "PPO":
         from stable_baselines3 import PPO
         # Create the custom policy
 
-        # NOTE: Uncomment for transofmrer only
-        policy_kwargs = dict(net_arch=dict(pi=[], vf=[256, 256]),
-                             features_extractor_class = NullFeatureExtractor,
-                             features_extractor_kwargs = dict(features_dim=32),
-                             share_features_extractor = True)
+        if model == "Transformer":
+            policy_kwargs = dict(net_arch=dict(pi=[], vf=[256, 256]),
+                                features_extractor_class = NullFeatureExtractor,
+                                features_extractor_kwargs = dict(features_dim=32),
+                                share_features_extractor = True)
 
-        # NOTE: uncomment when using MLP
-        # policy_kwargs = dict(net_arch=[dict(pi=[128, 128, 128, 128], vf=[256, 256])])
+        elif model == "MLP":
+            policy_kwargs = dict(net_arch=[dict(pi=[128, 128, 128, 128], vf=[256, 256])])
         
-        ## NOTE: uncomment when using GNN
-        # policy_kwargs = dict(net_arch=dict(pi=[], vf=[256, 256]),
-        #                      features_extractor_class = GraphFeaturesExtractor2,
-        #                      features_extractor_kwargs = dict(features_dim=32),
-        #                      share_features_extractor = True)
-        
+        elif "GNN" in model:
+            policy_kwargs = dict(net_arch=dict(pi=[], vf=[256, 256]),
+                                 features_extractor_class = GraphFeaturesExtractor2,
+                                 features_extractor_kwargs = dict(features_dim=32),
+                                 share_features_extractor = True)
+        else:
+            raise ValueError(f"Model {model} not supported")
         # NOTE: set desired batch_size and n_steps
         model = PPO(policy, env, verbose=1, device=device, policy_kwargs=policy_kwargs, tensorboard_log=tb_log_dir, n_steps= 90, batch_size = 90, gamma=1)
 
     elif algo == "TRPO":
         from sb3_contrib import TRPO
         model = TRPO(policy, env, verbose=1, device=device, tensorboard_log=tb_log_dir)
-    elif algo == "SAC":
-        from stable_baselines3 import SAC
-        model = SAC(policy, env, verbose=1, device=device, tensorboard_log=tb_log_dir)
-    elif algo == "DDPG":
-        from stable_baselines3 import DDPG
-        model = DDPG(policy, env, verbose=1, device=device, tensorboard_log=tb_log_dir)
-    elif algo == "TD3":
-        from stable_baselines3 import TD3
-        model = TD3(policy, env, verbose=1, device=device, tensorboard_log=tb_log_dir)
     elif algo == "A2C":
         from stable_baselines3 import A2C
         model = A2C(policy, env, verbose=1, device=device, tensorboard_log=tb_log_dir)
-    elif algo == "TQC":
-        from sb3_contrib import TQC
-        model = TQC(policy, env, verbose=1, device=device, tensorboard_log=tb_log_dir)
-    elif algo == "ARS":
-        from sb3_contrib import ARS
-        model = ARS(policy, env, verbose=1, device=device, tensorboard_log=tb_log_dir)
     else:
         raise NotImplementedError()
 
     return model
-
 
 def make_env(data, env_params, seed, multiple_env):
 
@@ -94,13 +77,12 @@ def make_env(data, env_params, seed, multiple_env):
     if multiple_env == False:
         env = JCoNaREnv(data, env_params['max_capacity'], env_params['max_episode_length'], len(env_params['counts']),
               env_params['counts'],env_params['amounts'], env_params['epsilons'],
-              env_params['capacity_upper_scale_bound'], G, seed)
+              env_params['capacity_upper_scale_bound'], env_params['model'], G, seed)
     else:
         env = make_vec_env(JCoNaREnv, n_envs = 4, env_kwargs=dict(data = data, max_capacity = env_params['max_capacity'],
         max_episode_length = env_params['max_episode_length'],number_of_transaction_types = len(env_params['counts']),
         counts = env_params['counts'], amounts = env_params['amounts'], epsilons = env_params['epsilons'],
-        capacity_upper_scale_bound = env_params['capacity_upper_scale_bound'], LN_graph = G, seed = seed))
-
+        capacity_upper_scale_bound = env_params['capacity_upper_scale_bound'], model = env_params['model'], LN_graph = G, seed = seed))
 
     return env
     
@@ -337,7 +319,6 @@ def get_number_of_channels(directed_edges, node_index):
     number_of_channels = len(directed_edges[directed_edges['src'] == src])
     return number_of_channels
 
-
 def get_discounted_reward(rewards, gamma):
     discounted_reward = 0
     for i in range(len(rewards)):
@@ -345,7 +326,6 @@ def get_discounted_reward(rewards, gamma):
         r = coeff*rewards[i]
         discounted_reward += r
     return discounted_reward
-
 
 def load_model(algo, env_params, path):
     node_index = env_params['node_index']
@@ -370,8 +350,6 @@ def load_model(algo, env_params, path):
         raise NotImplementedError
 
     return model
-
-
 
 def load_localized_model(radius, path):
     from stable_baselines3 import PPO

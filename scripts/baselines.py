@@ -73,7 +73,8 @@ if __name__ == '__main__':
                   'max_capacity': args.max_capacity,
                   'n_channels': args.n_channels,
                   'capacity_upper_scale_bound': args.capacity_upper_scale_bound,
-                  'local_heads_number':args.local_heads_number}
+                  'local_heads_number':args.local_heads_number,
+                  'model': 'Transformer'}
 
 
     strategy = args.strategy
