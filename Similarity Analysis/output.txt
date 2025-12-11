@@ -1,0 +1,132 @@
+🎉 Fireforest analysis completed in 359.4 minutes!
+
+================================================================================
+FIREFOREST SAMPLING ANALYSIS SUMMARY
+================================================================================
+
+Sample Size: 50
+----------------------------------------
+S1: In-degree Distribution:
+  Mean KS D-statistic: 0.9677 ± 0.0000
+  Range: [0.9677, 0.9677]
+  Median: 0.9677
+S2: Out-degree Distribution:
+  Mean KS D-statistic: 0.9677 ± 0.0000
+  Range: [0.9677, 0.9677]
+  Median: 0.9677
+S3: Weakly Connected Components:
+  Mean KS D-statistic: 0.9550 ± 0.0960
+  Range: [0.7500, 1.0000]
+  Median: 1.0000
+S4: Strongly Connected Components:
+  Mean KS D-statistic: 0.9550 ± 0.0960
+  Range: [0.7500, 1.0000]
+  Median: 1.0000
+S5: Hop-plot:
+  Mean KS D-statistic: 0.7000 ± 0.0000
+  Range: [0.7000, 0.7000]
+  Median: 0.7000
+S6: Hop-plot on Largest WCC:
+  Mean KS D-statistic: 0.7000 ± 0.0000
+  Range: [0.7000, 0.7000]
+  Median: 0.7000
+S7: First Singular Vector:
+  Mean KS D-statistic: 0.7272 ± 0.1119
+  Range: [0.4139, 0.9207]
+  Median: 0.7474
+S8: Singular Values:
+  Mean KS D-statistic: 0.6199 ± 0.1408
+  Range: [0.3682, 0.9592]
+  Median: 0.6122
+S9: Clustering Coefficient:
+  Mean KS D-statistic: 0.7965 ± 0.1221
+  Range: [0.4000, 0.9908]
+  Median: 0.8073
+
+
+Sample Size: 100
+----------------------------------------
+S1: In-degree Distribution:
+  Mean KS D-statistic: 0.9493 ± 0.0000
+  Range: [0.9493, 0.9493]
+  Median: 0.9493
+S2: Out-degree Distribution:
+  Mean KS D-statistic: 0.9493 ± 0.0000
+  Range: [0.9493, 0.9493]
+  Median: 0.9493
+S3: Weakly Connected Components:
+  Mean KS D-statistic: 0.9650 ± 0.0867
+  Range: [0.7500, 1.0000]
+  Median: 1.0000
+S4: Strongly Connected Components:
+  Mean KS D-statistic: 0.9650 ± 0.0867
+  Range: [0.7500, 1.0000]
+  Median: 1.0000
+S5: Hop-plot:
+  Mean KS D-statistic: 0.7000 ± 0.0000
+  Range: [0.7000, 0.7000]
+  Median: 0.7000
+S6: Hop-plot on Largest WCC:
+  Mean KS D-statistic: 0.7000 ± 0.0000
+  Range: [0.7000, 0.7000]
+  Median: 0.7000
+S7: First Singular Vector:
+  Mean KS D-statistic: 0.8045 ± 0.1059
+  Range: [0.5881, 0.9927]
+  Median: 0.7857
+S8: Singular Values:
+  Mean KS D-statistic: 0.5236 ± 0.1581
+  Range: [0.3400, 0.9600]
+  Median: 0.4600
+S9: Clustering Coefficient:
+  Mean KS D-statistic: 0.8119 ± 0.1152
+  Range: [0.4203, 0.9908]
+  Median: 0.8462
+
+
+Sample Size: 200
+----------------------------------------
+S1: In-degree Distribution:
+  Mean KS D-statistic: 0.9217 ± 0.0000
+  Range: [0.9217, 0.9217]
+  Median: 0.9217
+S2: Out-degree Distribution:
+  Mean KS D-statistic: 0.9217 ± 0.0000
+  Range: [0.9217, 0.9217]
+  Median: 0.9217
+S3: Weakly Connected Components:
+  Mean KS D-statistic: 0.9725 ± 0.0782
+  Range: [0.7500, 1.0000]
+  Median: 1.0000
+S4: Strongly Connected Components:
+  Mean KS D-statistic: 0.9725 ± 0.0782
+  Range: [0.7500, 1.0000]
+  Median: 1.0000
+S5: Hop-plot:
+  Mean KS D-statistic: 0.6990 ± 0.0099
+  Range: [0.6000, 0.7000]
+  Median: 0.7000
+S6: Hop-plot on Largest WCC:
+  Mean KS D-statistic: 0.6990 ± 0.0099
+  Range: [0.6000, 0.7000]
+  Median: 0.7000
+S7: First Singular Vector:
+  Mean KS D-statistic: 0.8941 ± 0.0732
+  Range: [0.6380, 0.9842]
+  Median: 0.9219
+S8: Singular Values:
+  Mean KS D-statistic: 0.5040 ± 0.1112
+  Range: [0.2900, 0.7800]
+  Median: 0.4900
+S9: Clustering Coefficient:
+  Mean KS D-statistic: 0.8303 ± 0.0571
+  Range: [0.5714, 0.9259]
+  Median: 0.8438
+
+
+💾 Saving results...
+✅ Results saved to 'fireforest_analysis_results.pkl'
+
+============================================================
+🎊 ANALYSIS COMPLETED SUCCESSFULLY!
+
